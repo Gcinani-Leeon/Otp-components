@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTP V7 Premium Verification - Auto Loop Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-page: #000000;
+    --bg-card: #121214;
+    --text-main: #ffffff;
+    --text-dim: #888891;
+    --accent-orange: #ff5a36;
+    --accent-orange-glow: rgba(255, 90, 54, 0.15);
+    --accent-green: #22c55e;
+    --accent-red: #ef4444;
+    --box-bg: #1a1a1e;
+    --box-border: #2c2c35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-page);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    overflow: hidden;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 320px;
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 24px 20px 32px;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.03);
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hidden-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    top: 0;
+    left: -1000px;
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .handle {
+    width: 40px;
+    height: 4px;
+    background: #333338;
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    transition: color 0.3s ease;
+  }
+  h1.success { color: var(--accent-green); }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .field {
+    position: relative;
+    height: 120px;
+    margin-bottom: 20px; 
+    cursor: text;
+  }
+
+  svg.connectors {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.connectors path {
+    fill: none;
+    stroke: var(--accent-orange);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    opacity: 0.8;
+  }
+
+  .slot {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 52px; height: 56px;
+    margin-left: -26px; margin-top: -28px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--box-bg);
+    border: 1.5px solid var(--box-border);
+    border-radius: 12px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-main);
+    z-index: 2;
+    transition: border-color 0.3s, box-shadow 0.3s, opacity 0.4s, filter 0.4s;
+  }
+  
+  .slot.active {
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 4px var(--accent-orange-glow);
+  }
+
+  .slot.error {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+  }
+
+  .slot .caret {
+    width: 2px; height: 22px;
+    background: var(--accent-orange);
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Error Shake Animation */
+  @keyframes shake {
+    0%, 100% { margin-left: -26px; }
+    20%, 60% { margin-left: -30px; }
+    40%, 80% { margin-left: -22px; }
+  }
+  .shake-anim { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+  .success-center {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3;
+    opacity: 0;
+    background: var(--box-bg);
+    border: 2px solid var(--accent-orange);
+    transition: background 0.4s ease, border-color 0.4s ease;
+  }
+  
+  .success-center.show { opacity: 1; }
+  .success-center.green { background: transparent; border-color: var(--accent-green); }
+
+  .success-center svg path {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+  }
+  .success-center.green svg path { stroke: var(--accent-green); }
+
+  #dot-burst-canvas {
+    position: absolute;
+    inset: -400px;
+    width: calc(100% + 800px);
+    height: calc(100% + 800px);
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .footer-action {
+    font-size: 13px;
+    color: var(--text-dim);
+    transition: opacity 0.3s;
+    height: 20px;
+  }
+  
+  .resend-btn {
+    color: var(--text-main);
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s, opacity 0.2s;
+    position: relative;
+    z-index: 10;
+  }
+  .resend-btn:active { opacity: 0.7; }
+  
+  .resend-timer-active {
+    color: var(--text-dim);
+    font-weight: 500;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .resend-success {
+    color: var(--accent-green);
+    font-weight: 500;
+    animation: fadeInOut 1.5s ease;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(2px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-2px); }
+  }
+
+  .secure-badge {
+    position: absolute;
+    bottom: 30px;
+    left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-green);
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .secure-badge.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .secure-badge svg { width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+
+  <input type="text" inputmode="numeric" maxlength="4" autocomplete="one-time-code" class="hidden-input" id="hiddenInput">
+
+  <div class="card" id="card">
+    <div class="handle"></div>
+    <h1 id="title">Let's verify your number</h1>
+    <div class="subtitle" id="subtitle">We've sent a 4-digit code to your phone.<br>It'll auto-verify once entered.</div>
+
+    <div class="field" id="field">
+      <canvas id="dot-burst-canvas"></canvas>
+      
+      <svg class="connectors" viewBox="-120 -60 240 120">
+        <path id="line-top" d="M -17 -32 L 17 -32" stroke-dasharray="34" stroke-dashoffset="34"/>
+        <path id="line-right" d="M 34 -15 L 34 15" stroke-dasharray="30" stroke-dashoffset="30"/>
+        <path id="line-bottom" d="M 17 32 L -17 32" stroke-dasharray="34" stroke-dashoffset="34"/>
+        <path id="line-left" d="M -34 15 L -34 -15" stroke-dasharray="30" stroke-dashoffset="30"/>
+      </svg>
+
+      <div class="slot" id="s0"></div>
+      <div class="slot" id="s1"></div>
+      <div class="slot" id="s2"></div>
+      <div class="slot" id="s3"></div>
+
+      <div class="success-center" id="success-center">
+        <svg viewBox="0 0 24 24" width="28" height="28"><path d="M5 12l5 5L20 7"/></svg>
+      </div>
+    </div>
+
+    <div class="footer-action" id="footer-action">
+      Didn't receive the code? <span class="resend-btn" id="resend-btn">Resend</span>
+    </div>
+
+    <div class="secure-badge" id="secure-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      Verified and Secure
+    </div>
+  </div>
+
+<script>
+  const card = document.getElementById('card');
+  const field = document.getElementById('field');
+  const hiddenInput = document.getElementById('hiddenInput');
+  const slots = [0,1,2,3].map(i => document.getElementById('s'+i));
+  const title = document.getElementById('title');
+  const subtitle = document.getElementById('subtitle');
+  const footerAct = document.getElementById('footer-action');
+  const secureBadge = document.getElementById('secure-badge');
+  const successCenter = document.getElementById('success-center');
+  const lines = ['line-top', 'line-right', 'line-bottom', 'line-left'].map(id => document.getElementById(id));
+
+  // --- HAPTIC HELPER ---
+  function vibrate(pattern) {
+    if (window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(pattern);
+    }
+  }
+
+  // --- DOT MESH BURST ---
+  const burstCanvas = document.getElementById('dot-burst-canvas');
+  const burstCtx = burstCanvas.getContext('2d');
+  const burstDpr = Math.min(window.devicePixelRatio || 1, 2);
+  const burstSpacing = 16;
+  let bw, bh, bcols, brows, bshimmer, burstRafId = null;
+
+  function burstHash(ix, iy) {
+    const n = Math.sin(ix * 127.1 + iy * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  function resizeBurstCanvas() {
+    bw = burstCanvas.offsetWidth; bh = burstCanvas.offsetHeight;
+    burstCanvas.width = bw * burstDpr; burstCanvas.height = bh * burstDpr;
+    burstCtx.setTransform(burstDpr, 0, 0, burstDpr, 0, 0);
+    bcols = Math.ceil(bw / burstSpacing) + 1;
+    brows = Math.ceil(bh / burstSpacing) + 1;
+    bshimmer = new Float32Array(bcols * brows);
+    for (let iy = 0; iy < brows; iy++) {
+      for (let ix = 0; ix < bcols; ix++) {
+        bshimmer[iy * bcols + ix] = 0.85 + burstHash(ix, iy) * 0.3;
+      }
+    }
+  }
+  window.addEventListener('resize', () => { if (burstCanvas.offsetWidth) resizeBurstCanvas(); });
+
+  function playDotBurst() {
+    resizeBurstCanvas();
+    if (burstRafId) cancelAnimationFrame(burstRafId);
+
+    const EXPAND_TIME = 1.2;
+    const FADE_OUT_TIME = 0.40;
+    const TOTAL = EXPAND_TIME + FADE_OUT_TIME;
+    const ox = bw / 2, oy = bh / 2;
+    const maxReach = Math.sqrt(bw * bw + bh * bh) * 0.55;
+
+    function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+    let start = null;
+
+    function frame(ts) {
+      if (!start) start = ts;
+      const t = (ts - start) / 1000;
+
+      if (t >= TOTAL) {
+        burstCtx.clearRect(0, 0, bw, bh);
+        burstRafId = null;
+        return;
+      }
+
+      burstCtx.clearRect(0, 0, bw, bh);
+      burstCtx.shadowColor = 'rgba(143,217,210,0.9)';
+      burstCtx.shadowBlur = 6;
+
+      const rawProgress = Math.min(t / EXPAND_TIME, 1);
+      const expandProgress = easeOutCubic(rawProgress);
+      const radius = expandProgress * maxReach;
+      const sigma = 46 + expandProgress * 130;
+      const ringEnvelope = Math.sin(Math.PI * Math.min(t / EXPAND_TIME, 1) * 0.92 + 0.04);
+
+      let globalFade = Math.min(1, t / 0.45);
+      const fadeOutStart = TOTAL - FADE_OUT_TIME;
+      if (t > fadeOutStart) {
+        const fo = (t - fadeOutStart) / FADE_OUT_TIME;
+        globalFade *= Math.max(0, 1 - fo * fo);
+      }
+
+      for (let iy = 0; iy < brows; iy++) {
+        for (let ix = 0; ix < bcols; ix++) {
+          const x = ix * burstSpacing, y = iy * burstSpacing;
+          const dx = x - ox, dy = y - oy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          const d = dist - radius;
+          const ringBright = 1 * ringEnvelope * Math.exp(-(d * d) / (2 * sigma * sigma));
+
+          let bright = 0 + ringBright;
+          bright = Math.min(bright, 1) * globalFade * bshimmer[iy * bcols + ix];
+          if (bright < 0.02) continue;
+
+          const r = 1.2 + bright * 4.2;
+          burstCtx.beginPath();
+          burstCtx.fillStyle = 'rgba(143,217,210,' + (bright * 0.92).toFixed(3) + ')';
+          burstCtx.arc(x, y, r, 0, Math.PI * 2);
+          burstCtx.fill();
+        }
+      }
+      burstRafId = requestAnimationFrame(frame);
+    }
+    burstRafId = requestAnimationFrame(frame);
+  }
+
+  // --- CORE ANIMATION & INTERACTION LOGIC ---
+  const ROW_POS = [ {x:-96, y:0}, {x:-32, y:0}, {x:32, y:0}, {x:96, y:0} ];
+  const GRID_POS = [ {x:-34, y:-32}, {x:34, y:-32}, {x:-34, y:32}, {x:34, y:32} ]; 
+
+  function move(el, p, scale = 1) { 
+    el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${scale})`; 
+  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  let isAnimating = false;
+
+  // ANIMACIÓN CASCADE INICIAL
+  window.addEventListener('DOMContentLoaded', () => {
+    slots.forEach((s, i) => {
+      s.style.opacity = '0';
+      move(s, {x: ROW_POS[i].x, y: 20});
+      setTimeout(() => {
+        s.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.3, 1), opacity 0.5s ease';
+        s.style.opacity = '1';
+        move(s, ROW_POS[i]);
+      }, i * 70 + 100);
+    });
+    setTimeout(() => {
+      slots.forEach(s => s.style.transition = 'border-color 0.3s, box-shadow 0.3s, opacity 0.4s');
+    }, 600);
+  });
+
+  // TIPO POP EFFECT
+  function popSlot(index) {
+    if (isAnimating) return;
+    const s = slots[index];
+    s.style.transition = 'transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    move(s, ROW_POS[index], 1.15);
+    setTimeout(() => {
+      if (!isAnimating) {
+        s.style.transition = 'transform 0.15s ease-out';
+        move(s, ROW_POS[index], 1);
+      }
+    }, 150);
+  }
+
+  // ERROR SHAKE
+  function triggerError() {
+    isAnimating = true;
+    vibrate([50, 50, 50]);
+    // Código incorrecto: NO cerramos el teclado, se mantiene abierto para reintentar.
+
+    slots.forEach(s => {
+      s.classList.add('error');
+      s.classList.add('shake-anim');
+    });
+
+    setTimeout(() => {
+      slots.forEach((s, i) => {
+        s.classList.remove('error');
+        s.classList.remove('shake-anim');
+        s.innerHTML = '';
+        s.classList.remove('active');
+      });
+      hiddenInput.value = '';
+      slots[0].classList.add('active');
+      slots[0].innerHTML = '<span class="caret"></span>';
+      isAnimating = false;
+      hiddenInput.focus();
+    }, 600);
+  }
+
+  hiddenInput.addEventListener('input', (e) => {
+    if (isAnimating) {
+      e.preventDefault();
+      return;
+    }
+
+    hiddenInput.value = hiddenInput.value.replace(/[^0-9]/g, '');
+    const val = hiddenInput.value;
+    
+    if (e.inputType !== 'deleteContentBackward') {
+      vibrate(15); 
+      if (val.length > 0) popSlot(val.length - 1);
+    }
+
+    for(let i = 0; i < 4; i++) {
+      slots[i].classList.remove('active');
+      if (i < val.length) {
+        slots[i].innerHTML = val[i];
+      } else if (i === val.length) {
+        slots[i].classList.add('active');
+        slots[i].innerHTML = '<span class="caret"></span>';
+      } else {
+        slots[i].innerHTML = '';
+      }
+    }
+
+    if (val.length === 4) {
+      if (val === '0000') {
+        triggerError();
+      } else {
+        hiddenInput.blur(); 
+        playAnimation();
+      }
+    }
+  });
+
+  async function playAnimation() {
+    isAnimating = true;
+    await sleep(300);
+
+    slots.forEach(s => s.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.3, 1), border-color 0.3s, opacity 0.4s');
+
+    move(slots[0], GRID_POS[0]); 
+    move(slots[1], GRID_POS[1]); 
+    move(slots[2], GRID_POS[2]); 
+    move(slots[3], GRID_POS[3]); 
+    await sleep(650);
+
+    for(let line of lines) {
+      line.style.transition = 'stroke-dashoffset 0.25s linear';
+      line.style.strokeDashoffset = '0';
+      await sleep(250);
+    }
+    await sleep(200);
+
+    slots.forEach(s => {
+      s.innerHTML = '';
+      s.style.borderWidth = '2px';
+      s.style.borderColor = 'var(--accent-orange)';
+      move(s, {x:0, y:0});
+    });
+    
+    lines.forEach(l => {
+      l.style.transition = 'opacity 0.3s';
+      l.style.opacity = '0';
+    });
+    await sleep(500);
+
+    slots.forEach(s => s.style.opacity = '0');
+    successCenter.classList.add('show');
+    successCenter.querySelector('path').style.strokeDashoffset = '0';
+    await sleep(400);
+
+    vibrate([40, 60, 40]); 
+    successCenter.classList.add('green');
+    playDotBurst();
+    
+    title.textContent = 'Verified Successfully';
+    title.classList.add('success');
+    subtitle.innerHTML = 'Your number has been verified.';
+    footerAct.style.opacity = '0'; 
+    
+    await sleep(300);
+    secureBadge.classList.add('show');
+
+    // Mantenemos el reseteo después del éxito como estaba en tu original
+    await sleep(2500);
+    resetComponent();
+  }
+
+  function resetComponent() {
+    title.textContent = "Let's verify your number";
+    title.classList.remove('success');
+    subtitle.innerHTML = "We've sent a 4-digit code to your phone.<br>It'll auto-verify once entered.";
+    footerAct.style.opacity = '1';
+    secureBadge.classList.remove('show');
+
+    successCenter.classList.remove('show', 'green');
+    successCenter.querySelector('path').style.transition = 'none';
+    successCenter.querySelector('path').style.strokeDashoffset = '30';
+
+    lines.forEach((l, index) => {
+      l.style.transition = 'none';
+      l.style.opacity = '0.8';
+      l.style.strokeDashoffset = index === 1 || index === 3 ? '30' : '34';
+    });
+
+    slots.forEach((s, i) => {
+      s.style.transition = 'none';
+      s.style.opacity = '1';
+      s.style.borderColor = 'var(--box-border)';
+      s.style.borderWidth = '1.5px';
+      s.innerHTML = '';
+      s.classList.remove('active', 'error');
+      move(s, ROW_POS[i]);
+    });
+
+    hiddenInput.value = '';
+    slots[0].classList.add('active');
+    slots[0].innerHTML = '<span class="caret"></span>';
+
+    requestAnimationFrame(() => {
+      slots.forEach(s => s.style.transition = 'border-color 0.3s, box-shadow 0.3s, opacity 0.4s');
+      successCenter.querySelector('path').style.transition = 'stroke-dashoffset 0.4s ease, stroke 0.4s ease';
+    });
+    isAnimating = false;
+  }
+
+  // Pre-posicionamiento inicial
+  slots.forEach((s, i) => move(s, ROW_POS[i]));
+  slots[0].classList.add('active');
+  slots[0].innerHTML = '<span class="caret"></span>';
+
+  // --- INTERACTIVO DE VERDAD: sin loop grabado, el usuario tipea el código ---
+  // Al tocar la card se enfoca el input oculto y en el celular se abre el
+  // teclado numérico nativo.
+  card.addEventListener('click', () => {
+    if (isAnimating) return;
+    hiddenInput.focus();
+  });
+
+  // Reenviar código: resetea el estado y vuelve a enfocar el input
+  const resendBtn = document.getElementById('resend-btn');
+  if (resendBtn) {
+    resendBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isAnimating) return;
+      resetComponent();
+      hiddenInput.focus();
+    });
+  }
+
+</script>
+</body>
+</html>
